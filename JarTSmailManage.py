@@ -6,6 +6,7 @@
 # @Software: PyCharm
 import os
 import time
+import shutil
 # import requests
 
 #获取dx 工具
@@ -33,7 +34,6 @@ toolsFileName = "tools"
 logFileName = "log"
 errorFNS  = "errorSmail.txt"
 errorFND  = "errorDex.txt"
-
 successFN  = "success.txt"
 
 # 文件路径
@@ -44,11 +44,22 @@ toolsFile = path + "/" + toolsFileName
 logFile = path + "/" + logFileName
 errorFileS = path + "/"+logFileName+"/" + errorFNS
 errorFileD = path + "/"+logFileName+"/" + errorFND
-
 successFile = path +"/"+logFileName+ "/" + successFN
+
+# 原工具路径
+dxpath = path + "/dx"
+dxjarpath = path + "/dx.jar"
+baksmalipath = path + "/" + toolbaksmali
+
+# 执行时工具路径
+
+dxRpath = toolsFile + "/dx"
+dxjarRpath = toolsFile + "/dx.jar"
+baksmaliRpath = toolsFile + "/" + toolbaksmali
 
 #下载目标的全路径
 dowFilePath = path+"/"+toolbaksmali
+
 
 #下载文件到指定目录
 # def down(_save_path, _url):
@@ -65,19 +76,46 @@ dowFilePath = path+"/"+toolbaksmali
 #         print(addfileName + "存在")
 
 
+def isConfiguration(cpath,rpath):
+    #先检测tools文件夹里是不是空的
+    folder6 = os.path.exists(cpath)
+    addfileName = os.path.basename(cpath)  # 获取文件名
+    if not folder6:  # 判断文件是否存在,如果是空的再去检查外部根目录
+        folder5 = os.path.exists(rpath)
+        addfileName = os.path.basename(rpath)  # 获取文件名
+        if not folder5:  # 判断文件是否存在
+            print("检测到" + addfileName + "文件不存在，注意添加" + addfileName + "否则脚本运行不起来")
+        else:
+            print("检测到" + addfileName + "文件在外部，移动到"+toolsFileName+"文件下")
+            fileMove(rpath);
+    else:
+        print("检测到" + addfileName + "文件存在")
+
+
+
+# 移动文件
+def fileMove(renamePath):
+    shutil.move(renamePath, toolsFile)
+
+
 # 创建文件分类管理目录
 def createFile():
     #创建管理目录
     isFile(buildFile, dexFileName)
     isFile(channelFile, jarFileName)
     isFile(smailFile, samilFileName)
-
-    # isFile(toolsFile, toolsFileName)
+    isFile(toolsFile, toolsFileName)
     # down(dowFilePath,toolbaksmaliUrl)
 
     isFile(logFile, logFileName)
     # isFile(errorFile, errorFN)
     # isFile(successFile, successFN)
+
+    #验证工具包和移动工具包
+    isConfiguration(dxRpath,dxpath);
+    isConfiguration(dxjarRpath,dxjarpath);
+    isConfiguration(baksmaliRpath,baksmalipath);
+
 
 # 执行命令
 def cmdAnd(smailCmd):
@@ -87,7 +125,7 @@ def cmdAnd(smailCmd):
 def isFile(path,name):
     folder0 = os.path.exists(path)
     if not folder0:  # 判断文件是否存在
-        print("检测到文件夹"+name + "不存在")
+        print("检测到"+name + "文件夹不存在")
         os.makedirs(path)
         time.sleep(3)
         print("文件夹"+name + "创建成功")
@@ -96,15 +134,16 @@ def isFile(path,name):
         print("文件夹"+name + "存在")
 
 
+
 # dex 转译 smail
 def cmdSmail(samilFileName,dexPath,dexName):
     try:
-        smailCmd = "java -jar " + path + "/" + toolbaksmali + " -o " + samilFileName + " " + dexPath
-        cmdAnd(smailCmd)
+        smailCmd = "java -jar " + baksmaliRpath + " -o " + samilFileName + " " + dexPath
+        errorSmailCode = cmdAnd(smailCmd)
         print(dexName + "smail转译中")
-    except Exception as err:
-        print("Error:文件名" + dexName +str(err))
-        logWriteTxt(errorFileS, dexName +str(err));
+    except  errorSmailCode:
+        print("Error:文件名" + dexName + errorSmailCode)
+        logWriteTxt(errorFileS, dexName + errorSmailCode);
     else:
         time.sleep(3)
         print(dexName + "smail转译完成")
@@ -112,7 +151,7 @@ def cmdSmail(samilFileName,dexPath,dexName):
 
 # jar 转译 dex
 def cmdDex(dexPath,jarFileName,jar,dexName):
-        dexcmd = path + "/dx --dex --output=" + dexPath + " " + path + "/" + jarFileName + "/" + jar
+        dexcmd = dxRpath + " --dex --output=" + dexPath + " " + path + "/" + jarFileName + "/" + jar
         cmdAnd(dexcmd)
         print(dexName + "dex文件生成中")
         time.sleep(3)
@@ -154,17 +193,16 @@ class JarManager(object):
                 folder1 = os.path.exists(dexPath)
                 if not folder1:  # 判断dex是否存在
                     try:
-                        cmdDex(dexPath, jarFileName, jar, fileName);
-                    except Exception as err:
-                        print("Error:文件名" + fileName + str(err))
-                        logWriteTxt(errorFileD, fileName + str(err));
+                        errorDexCode = cmdDex(dexPath, jarFileName, jar, fileName);
+                    except  errorDexCode:
+                        print("Error:文件名" + fileName + errorDexCode)
+                        logWriteTxt(errorFileS, fileName + errorDexCode);
 
                 else:
                     print(dexName + "存在")
 
-            # 创建新文件夹
+            # 创建Smail管理目录
             isFile(newFilePath,fileName)
-
             folder2 = os.path.exists(dexPath)
             if not folder2:  # 判断dex是否存在
                 print(dexName + "不存在")
@@ -176,10 +214,10 @@ class JarManager(object):
                 if not folder3:  # 判断Samil转译文件夹是否存为空
                     print(fileName + "文件为空")
                     try:
-                        cmdSmail(newFilePath, dexPath, fileName)
-                    except Exception as err:
-                        print("Error:文件名" + fileName + err)
-                        logWriteTxt(errorFileS, fileName + err);
+                      errorSmailCode = cmdSmail(newFilePath, dexPath, fileName)
+                    except  errorSmailCode :
+                        print("Error:文件名" + fileName + errorSmailCode)
+                        logWriteTxt(errorFileS, fileName + errorSmailCode);
                 else:
                     print(fileName + "文件存在")
 
