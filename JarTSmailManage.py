@@ -210,7 +210,10 @@ def cmdSmail(samilFileName, dexPath, dexName):
         message = "Error:转译.Smail失败_ " + dexName + " 文件"
         print(message)
         err = stderr.decode('utf-8')
-        logWriteTxt(errorFileS, message +"\n"+ str(err));
+        errStr = ""
+        if errStr == "":
+           errStr ="AbnormalStart:\n"+str(err)+"\nAbnormalEnd"
+        logWriteTxt(errorFileS, message +"\n"+ errStr)
 
     time.sleep(3)
 
@@ -233,7 +236,10 @@ def cmdDex(dexPath, jarFile, jar, dexName):
         message = "Error:转译.dex失败_文件名： " + dexName + " "
         err = stderr.decode('utf-8')
         print(message+str(err))
-        logWriteTxt(errorFileD, message+"\n"+str(err));
+        errStr = ""
+        if errStr == "":
+            errStr = "AbnormalStart:\n" + str(err) + "\nAbnormalEnd"
+        logWriteTxt(errorFileD, message+"\n"+errStr)
 
 
     time.sleep(3)
@@ -259,44 +265,49 @@ class JarManager(object):
     def excuteJar2Dex(self, path, jars):
 
         for jar in jars:
+            suffixName = os.path.splitext(jar)[-1] #获取文件名
+            if suffixName == ".jar":
+                print(jar+"文件后缀是.jar,开始编译")
+                fileName = str(jar.split('.jar')[0:][0])
+                dexName = fileName + ".dex"
+                dexPath = buildFile + "/" + dexName
+                channelPath = channelFile + "/" + jar
+                newFilePath = smailFile + "/" + fileName
 
-            fileName = str(jar.split('.jar')[0:][0])
-            dexName = fileName + ".dex"
-            dexPath = buildFile + "/" + dexName
-            channelPath = channelFile + "/" + jar
-            newFilePath = smailFile + "/" + fileName
-
-            folder0 = os.path.exists(channelPath)
-            if not folder0:  # 判断Jar是否存在
-                print(jar + "不存在")
-            else:
-                print(jar + "存在，开始验证dex")
-                folder1 = os.path.exists(dexPath)
-                if not folder1:  # 判断dex是否存在
-                    print(dexName + "不存在,开始转换")
-                    cmdDex(dexPath, jarFileName, jar, fileName)
+                folder0 = os.path.exists(channelPath)
+                if not folder0:  # 判断Jar是否存在
+                    print(jar + "不存在")
                 else:
-                    print(dexName + "已存在,跳过转换")
+                    print(jar + "存在，开始验证dex")
+                    folder1 = os.path.exists(dexPath)
+                    if not folder1:  # 判断dex是否存在
+                        print(dexName + "不存在,开始转换")
+                        cmdDex(dexPath, jarFileName, jar, fileName)
+                    else:
+                        print(dexName + "已存在,跳过转换")
 
 
 
-            folder2 = os.path.exists(dexPath)
-            if not folder2:  # 判断dex是否存在
-                print(dexName + "不存在,.smail转换停止")
+                folder2 = os.path.exists(dexPath)
+                if not folder2:  # 判断dex是否存在
+                    print(dexName + "不存在,.smail转换停止")
+
+                else:
+                    # 创建Smail管理目录
+                    isFile(newFilePath, fileName)
+                    print(dexName + "存在,开始转换.smail")
+                    # fileSize = newFilePath + "/com"
+                    # print("文件大小 %f",getFileSize(newFilePath))
+                    # folder3 = os.path.getsize(newFilePath)
+                    if getFileSize(newFilePath) == 0:  # 判断Samil转译文件夹是否存为空
+                        print(fileName + "文件内容为空,转换.smail")
+
+                        cmdSmail(newFilePath, dexPath, fileName)
+                    else:
+                        print(fileName + ".smail,已转换过")
 
             else:
-                # 创建Smail管理目录
-                isFile(newFilePath, fileName)
-                print(dexName + "存在,开始转换.smail")
-                # fileSize = newFilePath + "/com"
-                # print("文件大小 %f",getFileSize(newFilePath))
-                # folder3 = os.path.getsize(newFilePath)
-                if getFileSize(newFilePath) == 0:  # 判断Samil转译文件夹是否存为空
-                    print(fileName + "文件内容为空,转换.smail")
-
-                    cmdSmail(newFilePath, dexPath, fileName)
-                else:
-                    print(fileName + ".smail,已转换过")
+                print(jar+ "文件后缀不是.jar,跳过此文件")
 
 
 if __name__ == "__main__":
@@ -305,3 +316,15 @@ if __name__ == "__main__":
     jarNameList = jarManager.getJarList(path + "/channel/")
     jarManager.excuteJar2Dex(path, jarNameList)
     print("==============结束了==============")
+
+
+
+# 获取 后缀名(扩展名) / 文件名
+# file = "Hello.py"
+#
+# # 获取前缀（文件名称）
+# assert os.path.splitext(file)[0] == "Hello"
+#
+# # 获取后缀（文件类型）
+# assert os.path.splitext(file)[-1] == ".py"
+# assert os.path.splitext(file)[-1][1:] == "py"
