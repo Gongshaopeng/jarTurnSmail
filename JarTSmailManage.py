@@ -187,24 +187,30 @@ def createFile():
 def cmdAnd(smailCmd):
    p = Popen(smailCmd, shell=True, stdout=PIPE, stderr=PIPE)
    p.wait()
-   if p.returncode != 0:
-       return -1
-   else:
-       return 0
+   return p
+   # if p.returncode != 0:
+   #     return -1
+   # else:
+   #     return 0
 
-   # dex 转译 smail
+# dex 转译 smail
 def cmdSmail(samilFileName, dexPath, dexName):
     smailCmd = "java -jar " + baksmaliRpath + " -o " + samilFileName + " " + dexPath
     print(dexName + ".smail转译中")
-    p = cmdAnd(smailCmd)
-    if p == 0:
+    p = Popen(smailCmd, shell=True, stdout=PIPE, stderr=PIPE)
+    p.wait()
+    # p = cmdAnd(smailCmd)
+    stdout,stderr = p.communicate()
+    if p.returncode == 0:
         message = "Success:转译成功 " + dexName + ".smail "
-        logWriteTxt(successFileS, message)
+        out = stdout.decode('utf-8')
+        logWriteTxt(successFileS, message +"\n"+ str(out))
         print(dexName + ".smail转译完成")
     else:
         message = "Error:转译.Smail失败_ " + dexName + " 文件"
         print(message)
-        logWriteTxt(errorFileS, message);
+        err = stderr.decode('utf-8')
+        logWriteTxt(errorFileS, message +"\n"+ str(err));
 
     time.sleep(3)
 
@@ -213,16 +219,21 @@ def cmdSmail(samilFileName, dexPath, dexName):
 # jar 转译 dex
 def cmdDex(dexPath, jarFile, jar, dexName):
     dexcmd = dxRpath + " --dex --output=" + dexPath + " " + path + "/" + jarFile + "/" + jar
-    p = cmdAnd(dexcmd)
+    # p = cmdAnd(dexcmd)
+    p = Popen(dexcmd, shell=True, stdout=PIPE, stderr=PIPE)
+    p.wait()
+    stdout,stderr = p.communicate()
     print(dexName + ".dex文件生成中" + dexPath)
-    if p == 0:
+    if p.returncode == 0:
         message = "Success:转译成功 " + dexName + ".dex "
-        logWriteTxt(successFileD, message)
-        print(dexName + ".dex转译完成")
+        out = stdout.decode('utf-8')
+        logWriteTxt(successFileD, message+"\n"+str(out))
+        print(dexName + ".dex转译完成" + str(out))
     else:
-        message = "Error:转译.dex失败_失败文件名： " + dexName + " "
-        print(message)
-        logWriteTxt(errorFileD, message);
+        message = "Error:转译.dex失败_文件名： " + dexName + " "
+        err = stderr.decode('utf-8')
+        print(message+str(err))
+        logWriteTxt(errorFileD, message+"\n"+str(err));
 
 
     time.sleep(3)
