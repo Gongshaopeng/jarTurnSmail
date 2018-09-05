@@ -168,10 +168,6 @@ def createFile():
     for runCpath in listConfig:
         isConfiguration(runCpath[0], runCpath[1])
 
-    # isFile(logFile, logFileName)
-    # isFile(errorFile, errorFN)
-    # isFile(successFile, successFN)
-
     # 下载baksmali工具包
     # down(dowFilePath,toolbaksmaliUrl)
 
